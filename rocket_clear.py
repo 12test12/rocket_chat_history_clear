@@ -25,6 +25,10 @@ def main():
     start_date = str(datetime.datetime.now() + datetime.timedelta(-30))[:10]
     #This removes any messages 30+ days old
     subprocess.call("""/usr/bin/mongo localhost/parties --eval 'db.rocketchat_message.remove( { ts: { $lt: ISODate(\""""+start_date+"""\") } } );'""", shell=True)
+    #This removes not used chatrooms 30+ days old
+    chatrooms = subprocess.getoutput("""/snap/rocketchat-server/current/bin/mongo localhost/parties --eval 'db.rocketchat_room.find( { _updatedAt: { $lt: ISODate(\""""+start_date+"""\") } } ).toArray();' | grep '\\bname\\b'| cut -d ':' -f 2 | cut -d',' -f 1 |  sed 's/"//g' """)
+	for chatroom in chatrooms.splitlines():
+		subprocess.call("""  /snap/rocketchat-server/current/bin/mongo localhost/parties --eval 'db.getCollectionNames().forEach(function (collectionName) {     var collection = db.getCollection(collectionName);     collection.remove({"name": \""""+chatroom+"""\"})});'  """, shell=True)
     #This grabs any uploaded files that are 30+ days old.
     outerr = subprocess.Popen("""/usr/bin/mongo localhost/parties --eval 'db.rocketchat_uploads.find( { uploadedAt: { $lt: ISODate(\""""+start_date+"""\") } } ).forEach(printjson);'""", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     out, err = outerr.communicate()
@@ -36,6 +40,7 @@ def main():
         subprocess.call("""/usr/bin/mongo localhost/parties --eval 'db.rocketchat_uploads.chunks.remove({ files_id : {$eq : \""""+id+ """\"}})'""", shell=True)
         subprocess.call("""/usr/bin/mongo localhost/parties --eval 'db.rocketchat_uploads.files.remove({ _id : {$eq : \""""+id+ """\"}})'""", shell=True)
         subprocess.call("""/usr/bin/mongo localhost/parties --eval 'db.rocketchat_uploads.remove({ _id : {$eq : \""""+id+ """\"}})'""", shell=True)
+
 
 
 if __name__ == "__main__":
