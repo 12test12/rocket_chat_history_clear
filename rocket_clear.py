@@ -42,6 +42,5 @@ def main():
         subprocess.call("""/usr/bin/mongo localhost/parties --eval 'db.rocketchat_uploads.remove({ _id : {$eq : \""""+id+ """\"}})'""", shell=True)
 
 
-
 if __name__ == "__main__":
 	main()
